@@ -39,22 +39,21 @@ const SentimentHeader = () => {
       </div>
 
       <div className="container max-w-4xl mx-auto text-center relative z-10">
-        {/* Fecha y Hora */}
-        <div className="mb-6 animate-fade-in">
-          <div className="inline-block bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 rounded-xl px-6 py-3">
-            <p className="text-primary-foreground/90 text-sm md:text-base font-medium capitalize">
-              {formatDate(currentDateTime)}
-            </p>
-            <p className="text-primary-foreground font-bold text-xl md:text-2xl mt-1 tabular-nums">
-              {formatTime(currentDateTime)}
-            </p>
-          </div>
-        </div>
-
-        {/* Ícono cerebro con animación de pulso */}
-        <div className="flex items-center justify-center mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+        {/* Cerebro y Fecha/Hora alineados */}
+        <div className="flex items-center justify-center gap-6 md:gap-12 mb-6 animate-fade-in">
+          {/* Ícono cerebro con animación de pulso */}
           <div className="p-4 bg-primary-foreground/10 rounded-2xl backdrop-blur-sm border border-primary-foreground/20 animate-pulse-slow hover:scale-110 transition-transform duration-300">
             <Brain className="w-12 h-12 md:w-16 md:h-16 text-primary-foreground animate-brain-pulse" />
+          </div>
+
+          {/* Fecha y Hora al lado derecho */}
+          <div className="bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 rounded-xl px-4 md:px-6 py-3">
+            <p className="text-primary-foreground/90 text-xs md:text-sm font-medium capitalize text-left">
+              {formatDate(currentDateTime)}
+            </p>
+            <p className="text-primary-foreground font-bold text-lg md:text-xl mt-1 tabular-nums text-left">
+              {formatTime(currentDateTime)}
+            </p>
           </div>
         </div>
 
