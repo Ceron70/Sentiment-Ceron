@@ -36,46 +36,36 @@ const Index = () => {
 
   const analyzeSentiment = async (text: string) => {
     setIsLoading(true);
-  
-  try {
-    const response = await fetch("https://sentiment-tech-api.onrender.com/api/v1/sentiment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text }),
-    });
-
-    // Agregar más info sobre el error
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Error response:", errorText);
-      throw new Error(`Error del servidor (${response.status}): ${errorText}`);
-    }
-
-    const data: ApiResponse = await response.json();
     
-    if (!data.success) {
-      throw new Error(data.message || "Error al analizar el sentimiento");
-    }
+    try {
+      const response = await fetch("https://sentiment-tech-api.onrender.com/api/v1/sentiment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
+      });
 
-    const sentiment = mapPrevisionToSentiment(data.data.prevision);
-    const confidence = Math.round(data.data.probabilidad * 100);
-    
-    setResult({ sentiment, confidence, text });
-  } catch (error) {
-    console.error("Error analyzing sentiment:", error);
-    
-    // Mensaje más descriptivo
-    if (error instanceof Error) {
-      toast.error(`Error: ${error.message}`);
-    } else {
-      toast.error("No se pudo conectar con el servidor. Intenta más tarde.");
+      if (!response.ok) {
+        throw new Error("Error en la respuesta del servidor");
+      }
+
+      const data: ApiResponse = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || "Error al analizar el sentimiento");
+      }
+
+      const sentiment = mapPrevisionToSentiment(data.data.prevision);
+      const confidence = Math.round(data.data.probabilidad * 100);
+
+      setResult({ sentiment, confidence, text });
+    } catch (error) {
+      console.error("Error analyzing sentiment:", error);
+      toast.error("No se pudo analizar el texto. Por favor, intenta de nuevo.");
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-	
   };
 
   const handleReset = () => {
