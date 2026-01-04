@@ -35,10 +35,13 @@ const Index = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
   const analyzeSentiment = async (text: string) => {
-    setIsLoading(true);
+   setIsLoading(true);
   
   try {
-    const response = await fetch("https://sentiment-tech-api.onrender.com/api/v1/sentiment", {
+    toast.info("Conectando con el servidor...");
+    
+    // Primer intento
+    let response = await fetch("https://sentiment-tech-api.onrender.com/api/v1/sentiment", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -46,11 +49,24 @@ const Index = () => {
       body: JSON.stringify({ text }),
     });
 
-    // Agregar más info sobre el error
+    // Si falla, reintentar después de 3 segundos
+    if (!response.ok && response.status === 503) {
+      toast.info("Despertando el servidor, espera un momento...");
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      response = await fetch("https://sentiment-tech-api.onrender.com/api/v1/sentiment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
+      });
+    }
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Error response:", errorText);
-      throw new Error(`Error del servidor (${response.status}): ${errorText}`);
+      const errorData = JSON.parse(errorText);
+      throw new Error(errorData.message || `Error del servidor (${response.status})`);
     }
 
     const data: ApiResponse = await response.json();
@@ -63,12 +79,13 @@ const Index = () => {
     const confidence = Math.round(data.data.probabilidad * 100);
     
     setResult({ sentiment, confidence, text });
+    toast.success("Análisis completado!");
+    
   } catch (error) {
     console.error("Error analyzing sentiment:", error);
     
-    // Mensaje más descriptivo
     if (error instanceof Error) {
-      toast.error(`Error: ${error.message}`);
+      toast.error(error.message);
     } else {
       toast.error("No se pudo conectar con el servidor. Intenta más tarde.");
     }
