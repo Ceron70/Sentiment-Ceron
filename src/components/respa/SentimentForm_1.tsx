@@ -27,23 +27,14 @@ const SentimentForm = ({ onAnalyze, isLoading }: SentimentFormProps) => {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Escribe aquí el texto que quieres analizar (mínimo 5 caracteres)..."
-          className="min-h-[200px] md:min-h-[300px] 
-                     text-lg md:text-2xl 
-                     font-medium
-                     leading-relaxed
-                     p-6 md:p-8
-                     resize-none 
+          className="min-h-[200px] md:min-h-[300px] text-base md:text-lg p-6 resize-none 
                      bg-card border-2 border-border/50 rounded-xl
                      focus:border-primary focus:ring-4 focus:ring-primary/10
-                     placeholder:text-muted-foreground/60 placeholder:text-lg
+                     placeholder:text-muted-foreground/60
                      transition-all duration-300 shadow-soft"
-          style={{ 
-            fontFamily: "'Inter', 'Segoe UI', 'Roboto', sans-serif",
-            lineHeight: "1.6"
-          }}
           disabled={isLoading}
         />
-        <div className="absolute bottom-4 right-4 text-sm md:text-base text-muted-foreground font-medium bg-background/80 backdrop-blur-sm px-3 py-1 rounded-lg">
+        <div className="absolute bottom-4 right-4 text-sm text-muted-foreground">
           {text.length} caracteres
         </div>
       </div>
@@ -53,7 +44,7 @@ const SentimentForm = ({ onAnalyze, isLoading }: SentimentFormProps) => {
         disabled={!isValid || isLoading}
         className="w-full h-14 md:h-16 text-lg md:text-xl font-semibold
                    gradient-primary text-primary-foreground
-                   hover:opacity-90 hover:shadow-glow hover:scale-[1.02]
+                   hover:opacity-90 hover:shadow-glow
                    disabled:opacity-50 disabled:cursor-not-allowed
                    transition-all duration-300 rounded-xl"
       >
@@ -71,7 +62,7 @@ const SentimentForm = ({ onAnalyze, isLoading }: SentimentFormProps) => {
       </Button>
 
       {!isValid && text.length > 0 && (
-        <p className="text-sm md:text-base text-muted-foreground text-center animate-fade-in">
+        <p className="text-sm text-muted-foreground text-center animate-fade-in">
           Escribe al menos 5 caracteres para analizar
         </p>
       )}
