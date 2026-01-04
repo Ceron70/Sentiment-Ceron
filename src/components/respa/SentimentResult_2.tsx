@@ -8,7 +8,7 @@ export type SentimentType = "positive" | "negative" | "neutral";
 interface SentimentResultProps {
   sentiment: SentimentType;
   confidence: number;
-  text: string;
+  text: string; // ✅ AGREGADO: faltaba este prop
   onReset: () => void;
 }
 
@@ -46,44 +46,12 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
     <Card className="w-full p-8 md:p-12 bg-card shadow-card border-0 rounded-2xl animate-scale-in">
       <div className="flex flex-col items-center text-center space-y-6">
         
-        {/* Emoji Animado */}
+        {/* Emoji */}
         <div 
-          className="text-7xl md:text-8xl relative"
+          className="text-7xl md:text-8xl animate-bounce-in"
           style={{ animationDelay: "0.1s" }}
         >
-          {/* Versión con múltiples animaciones según sentimiento */}
-          {sentiment === "positive" && (
-            <div className="animate-bounce">
-              <div className="hover:scale-125 transition-transform duration-300 cursor-pointer">
-                {config.emoji}
-              </div>
-            </div>
-          )}
-          
-          {sentiment === "negative" && (
-            <div 
-              className="animate-pulse"
-              style={{
-                animation: "swing 2s ease-in-out infinite"
-              }}
-            >
-              <div className="hover:scale-110 transition-transform duration-300 cursor-pointer">
-                {config.emoji}
-              </div>
-            </div>
-          )}
-          
-          {sentiment === "neutral" && (
-            <div 
-              style={{
-                animation: "float 3s ease-in-out infinite"
-              }}
-            >
-              <div className="hover:rotate-12 transition-transform duration-300 cursor-pointer">
-                {config.emoji}
-              </div>
-            </div>
-          )}
+          {config.emoji}
         </div>
 
         {/* Sentiment Label */}
@@ -109,7 +77,7 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
           {config.description}
         </p>
 
-        {/* Texto Analizado con emoticón pequeño animado */}
+        {/* ✅ TEXTO ANALIZADO con emoticón */}
         <div 
           className="w-full max-w-2xl p-4 bg-secondary/50 rounded-xl animate-fade-in"
           style={{ animationDelay: "0.35s" }}
@@ -118,18 +86,7 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
             Texto analizado:
           </p>
           <p className="text-base md:text-lg text-foreground flex items-center justify-center gap-2">
-            <span 
-              className="text-2xl inline-block"
-              style={{
-                animation: sentiment === "positive" 
-                  ? "bounce-small 1s ease-in-out infinite" 
-                  : sentiment === "negative"
-                  ? "shake 2s ease-in-out infinite"
-                  : "float-small 2s ease-in-out infinite"
-              }}
-            >
-              {config.emoji}
-            </span>
+            <span className="text-2xl">{config.emoji}</span>
             <span>"{text}"</span>
           </p>
         </div>
@@ -169,36 +126,6 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
           Analizar otro texto
         </Button>
       </div>
-
-      {/* Estilos de animaciones personalizadas */}
-      <style>{`
-        @keyframes swing {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(-5deg); }
-          75% { transform: rotate(5deg); }
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-15px); }
-        }
-
-        @keyframes float-small {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-5px); }
-        }
-
-        @keyframes bounce-small {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
-        }
-
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-3px); }
-          75% { transform: translateX(3px); }
-        }
-      `}</style>
     </Card>
   );
 };
