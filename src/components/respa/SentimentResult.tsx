@@ -2,13 +2,13 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 export type SentimentType = "positive" | "negative" | "neutral";
 
 interface SentimentResultProps {
   sentiment: SentimentType;
   confidence: number;
-  text: string; // ✅ AGREGADO: faltaba este prop
   onReset: () => void;
 }
 
@@ -45,6 +45,13 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
   return (
     <Card className="w-full p-8 md:p-12 bg-card shadow-card border-0 rounded-2xl animate-scale-in">
       <div className="flex flex-col items-center text-center space-y-6">
+
+      <p 
+          className="${config.gradientClass} text-base md:text-lg animate-fade-in"
+          style={{ animationDelay: "0.3s" }}
+        >
+          {text}
+        </p>
         
         {/* Emoji */}
         <div 
@@ -77,20 +84,6 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
           {config.description}
         </p>
 
-        {/* ✅ TEXTO ANALIZADO con emoticón */}
-        <div 
-          className="w-full max-w-2xl p-4 bg-secondary/50 rounded-xl animate-fade-in"
-          style={{ animationDelay: "0.35s" }}
-        >
-          <p className="text-sm text-muted-foreground mb-2 font-medium">
-            Texto analizado:
-          </p>
-          <p className="text-base md:text-lg text-foreground flex items-center justify-center gap-2">
-            <span className="text-2xl">{config.emoji}</span>
-            <span>"{text}"</span>
-          </p>
-        </div>
-
         {/* Confidence Progress */}
         <div 
           className="w-full max-w-md space-y-3 animate-fade-in"
@@ -105,7 +98,8 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
               className={`h-full ${config.gradientClass} transition-all duration-1000 ease-out rounded-full`}
               style={{ 
                 width: `${confidence}%`,
-                animation: "progress-fill 1s ease-out forwards"
+                animation: "progress-fill 1s ease-out forwards",
+                ["--progress-value" as string]: `${confidence}%`
               }}
             />
           </div>
