@@ -1,7 +1,8 @@
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Copy, Share2, Download, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 export type SentimentType = "positive" | "negative" | "neutral";
 
@@ -41,89 +42,54 @@ const sentimentConfig = {
 
 const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResultProps) => {
   const config = sentimentConfig[sentiment];
-  
-  // ✅ AQUÍ: Agregar funciones auxiliares si es necesario
-  <div className="flex gap-3 mt-4">
-  <Button variant="outline" onClick={handleCopy}>
-    <Copy className="w-5 h-5 mr-2" />
-    Copiar resultado
-  </Button>
-  <Button variant="outline" onClick={handleShare}>
-    <Share2 className="w-5 h-5 mr-2" />
-    Compartir
-  </Button>
-</div>
 
-<div className="w-full space-y-2">
-  <p className="font-semibold">Desglose de emociones:</p>
-  <div className="space-y-2">
-    <div className="flex justify-between">
-      <span>😢 Tristeza</span>
-      <span>45%</span>
-    </div>
-    <Progress value={45} className="h-2 bg-red-200" />
+  // Calcular estadísticas del texto
+  const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+  const charCount = text.length;
+  const sentenceCount = text.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+
+  // Función para copiar resultado
+  const handleCopy = () => {
+    const resultText = `Texto: "${text}"\nSentimiento: ${config.label}\nConfianza: ${confidence}%`;
+    navigator.clipboard.writeText(resultText);
+    toast.success("Resultado copiado al portapapeles");
+  };
+
+  // Función para compartir
+  const handleShare = async () => {
+    const shareData = {
+      title: 'Análisis de Sentimiento ML',
+      text: `Analicé: "${text}" - Resultado: ${config.label} (${confidence}% confianza)`,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        toast.success("Compartido exitosamente");
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          toast.error("Error al compartir");
+        }
+      }
+    } else {
+      handleCopy();
+      toast.info("Resultado copiado para compartir");
+    }
+  };
+
+  // Función para descargar como texto
+  const handleDownload = () => {
+    const content = `ANÁLISIS DE SENTIMIENTO\n\nTexto analizado:\n"${text}"\n\nResultado: ${config.label}\nConfianza: ${confidence}%\nPalabras: ${wordCount}\nCaracteres: ${charCount}\n\nFecha: ${new Date().toLocaleString('es-ES')}`;
     
-    <div className="flex justify-between">
-      <span>😤 Enojo</span>
-      <span>30%</span>
-    </div>
-    <Progress value={30} className="h-2 bg-orange-200" />
-  </div>
-</div>
-
-<div className="bg-secondary/30 p-4 rounded-lg">
-  <p className="text-sm font-medium mb-2">Palabras clave detectadas:</p>
-  <div className="flex flex-wrap gap-2">
-    <Badge variant="destructive">mala</Badge>
-    <Badge variant="outline">es</Badge>
-  </div>
-</div>
-
-{sentiment === "negative" && (
-  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-    <div className="flex items-start gap-2">
-      <Lightbulb className="w-5 h-5 text-blue-600 mt-0.5" />
-      <div>
-        <p className="font-medium text-blue-900">Sugerencia:</p>
-        <p className="text-sm text-blue-700">
-          Intenta reformular con un tono más constructivo
-        </p>
-      </div>
-    </div>
-  </div>
-)}
-
-<Button variant="ghost" onClick={toggleHistory}>
-  <History className="w-5 h-5 mr-2" />
-  Ver historial ({historyCount})
-</Button>
-
-<Button variant="outline" onClick={openRewriter}>
-  <Edit className="w-5 h-5 mr-2" />
-  Mejorar texto
-</Button>
-// Abre un modal que sugiere una versión más positiva
-
-{sentiment === "positive" && confidence > 80 && (
-  <Confetti numberOfPieces={200} recycle={false} />
-)}
-
-<div className="grid grid-cols-3 gap-4 mt-4">
-  <div className="text-center p-3 bg-secondary/30 rounded">
-    <p className="text-2xl font-bold">{wordCount}</p>
-    <p className="text-xs text-muted-foreground">Palabras</p>
-  </div>
-  <div className="text-center p-3 bg-secondary/30 rounded">
-    <p className="text-2xl font-bold">{charCount}</p>
-    <p className="text-xs text-muted-foreground">Caracteres</p>
-  </div>
-  <div className="text-center p-3 bg-secondary/30 rounded">
-    <p className="text-2xl font-bold">{sentenceCount}</p>
-    <p className="text-xs text-muted-foreground">Frases</p>
-  </div>
-</div>
-
-
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analisis-sentimiento-${Date.now()}.txt`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast.success("Archivo descargado");
+  };
 
   return (
     <Card className="w-full p-8 md:p-12 bg-card shadow-card border-0 rounded-2xl animate-scale-in">
@@ -150,7 +116,6 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
           className="text-7xl md:text-8xl relative"
           style={{ animationDelay: "0.2s" }}
         >
-          {/* Versión con múltiples animaciones según sentimiento */}
           {sentiment === "positive" && (
             <div className="animate-bounce">
               <div className="hover:scale-125 transition-transform duration-300 cursor-pointer">
@@ -188,7 +153,7 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
         {/* Sentiment Label */}
         <div 
           className="space-y-2 animate-fade-in"
-          style={{ animationDelay: "0.2s" }}
+          style={{ animationDelay: "0.3s" }}
         >
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
             Sentimiento Detectado
@@ -203,7 +168,7 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
         {/* Description */}
         <p 
           className="text-muted-foreground text-base md:text-lg animate-fade-in"
-          style={{ animationDelay: "0.3s" }}
+          style={{ animationDelay: "0.4s" }}
         >
           {config.description}
         </p>
@@ -211,7 +176,7 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
         {/* Confidence Progress */}
         <div 
           className="w-full max-w-md space-y-3 animate-fade-in"
-          style={{ animationDelay: "0.4s" }}
+          style={{ animationDelay: "0.5s" }}
         >
           <div className="flex justify-between items-center text-sm font-medium">
             <span className="text-muted-foreground">Nivel de Confianza</span>
@@ -228,6 +193,72 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
           </div>
         </div>
 
+        {/* Estadísticas del Texto */}
+        <div 
+          className="grid grid-cols-3 gap-3 w-full max-w-md animate-fade-in"
+          style={{ animationDelay: "0.6s" }}
+        >
+          <div className="text-center p-3 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
+            <p className="text-2xl font-bold text-foreground">{wordCount}</p>
+            <p className="text-xs text-muted-foreground">Palabras</p>
+          </div>
+          <div className="text-center p-3 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
+            <p className="text-2xl font-bold text-foreground">{charCount}</p>
+            <p className="text-xs text-muted-foreground">Caracteres</p>
+          </div>
+          <div className="text-center p-3 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
+            <p className="text-2xl font-bold text-foreground">{sentenceCount}</p>
+            <p className="text-xs text-muted-foreground">Frases</p>
+          </div>
+        </div>
+
+        {/* Botones de Acción */}
+        <div 
+          className="flex flex-wrap gap-3 justify-center animate-fade-in"
+          style={{ animationDelay: "0.7s" }}
+        >
+          <Button
+            variant="outline"
+            onClick={handleCopy}
+            className="h-11 px-5 hover:bg-secondary transition-all duration-300"
+          >
+            <Copy className="w-4 h-4 mr-2" />
+            Copiar
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={handleShare}
+            className="h-11 px-5 hover:bg-secondary transition-all duration-300"
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            Compartir
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={handleDownload}
+            className="h-11 px-5 hover:bg-secondary transition-all duration-300"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Descargar
+          </Button>
+        </div>
+
+        {/* Info adicional */}
+        <div 
+          className="text-xs text-muted-foreground p-3 bg-secondary/20 rounded-lg w-full max-w-md animate-fade-in"
+          style={{ animationDelay: "0.8s" }}
+        >
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <TrendingUp className="w-3 h-3" />
+            <span>Análisis realizado con IA</span>
+          </div>
+          <p className="text-center">
+            {new Date().toLocaleString('es-ES')}
+          </p>
+        </div>
+
         {/* Reset Button */}
         <Button
           onClick={onReset}
@@ -237,7 +268,7 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
                      hover:bg-primary hover:text-primary-foreground
                      transition-all duration-300 rounded-xl
                      animate-fade-in"
-          style={{ animationDelay: "0.5s" }}
+          style={{ animationDelay: "0.9s" }}
         >
           <RefreshCw className="w-5 h-5 mr-2" />
           Analizar otro texto
@@ -266,11 +297,6 @@ const SentimentResult = ({ sentiment, confidence, text, onReset }: SentimentResu
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-15px); }
-        }
-
-        @keyframes float-small {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-5px); }
         }
 
         @keyframes shake {
