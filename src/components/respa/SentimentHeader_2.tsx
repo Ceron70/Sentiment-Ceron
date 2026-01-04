@@ -1,34 +1,6 @@
 import { Brain } from "lucide-react";
-import { useState, useEffect } from "react";
 
 const SentimentHeader = () => {
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentDateTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
-
   return (
     <header className="w-full gradient-primary py-12 md:py-20 px-4 relative overflow-hidden">
       {/* Partículas de fondo animadas */}
@@ -39,20 +11,8 @@ const SentimentHeader = () => {
       </div>
 
       <div className="container max-w-4xl mx-auto text-center relative z-10">
-        {/* Fecha y Hora */}
-        <div className="mb-6 animate-fade-in">
-          <div className="inline-block bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 rounded-xl px-6 py-3">
-            <p className="text-primary-foreground/90 text-sm md:text-base font-medium capitalize">
-              {formatDate(currentDateTime)}
-            </p>
-            <p className="text-primary-foreground font-bold text-xl md:text-2xl mt-1 tabular-nums">
-              {formatTime(currentDateTime)}
-            </p>
-          </div>
-        </div>
-
         {/* Ícono cerebro con animación de pulso */}
-        <div className="flex items-center justify-center mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+        <div className="flex items-center justify-center mb-6 animate-fade-in">
           <div className="p-4 bg-primary-foreground/10 rounded-2xl backdrop-blur-sm border border-primary-foreground/20 animate-pulse-slow hover:scale-110 transition-transform duration-300">
             <Brain className="w-12 h-12 md:w-16 md:h-16 text-primary-foreground animate-brain-pulse" />
           </div>
@@ -61,7 +21,7 @@ const SentimentHeader = () => {
         {/* Título con gradiente animado */}
         <h1 
           className="text-3xl md:text-5xl font-extrabold mb-4 animate-fade-in"
-          style={{ animationDelay: "0.2s" }}
+          style={{ animationDelay: "0.1s" }}
         >
           <span className="inline-block bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent animate-gradient bg-[length:200%_auto] hover:scale-105 transition-transform duration-300">
             Análisis de Sentimiento ML
@@ -71,7 +31,7 @@ const SentimentHeader = () => {
         {/* Subtítulo con efecto de aparición */}
         <p 
           className="text-lg md:text-xl text-primary-foreground/90 font-medium animate-fade-in-up"
-          style={{ animationDelay: "0.3s" }}
+          style={{ animationDelay: "0.2s" }}
         >
           Detecta emociones en texto usando{" "}
           <span className="font-bold text-primary-foreground animate-pulse inline-block">
