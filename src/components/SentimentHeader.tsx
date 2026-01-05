@@ -61,8 +61,8 @@ const SentimentHeader = () => {
         <div className="text-center pt-2">
           {/* Ícono cerebro */}
           <div className="flex items-center justify-center mb-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            <div className="p-3 bg-red-500/10 rounded-xl backdrop-blur-sm border border-red-500/20 animate-pulse-slow hover:scale-110 transition-transform duration-300">
-              <Brain className="w-10 h-10 md:w-12 md:h-12 text-red-500 animate-brain-pulse" />
+            <div className="p-3 bg-red-500/20 rounded-xl backdrop-blur-sm border border-red-400/30 animate-pulse-slow hover:scale-110 transition-transform duration-300 shadow-lg shadow-red-500/20">
+              <Brain className="w-10 h-10 md:w-12 md:h-12 text-red-500 animate-brain-pulse" strokeWidth={2.5} />
             </div>
           </div>
 
@@ -101,15 +101,15 @@ const SentimentHeader = () => {
           animation: gradient 4s ease infinite;
         }
 
-        /* Animación del cerebro */
+        /* Animación del cerebro con efecto rojo */
         @keyframes brain-pulse {
           0%, 100% { 
             transform: scale(1);
-            filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4));
+            filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.6));
           }
           50% { 
-            transform: scale(1.05);
-            filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.6));
+            transform: scale(1.08);
+            filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.8));
           }
         }
 
