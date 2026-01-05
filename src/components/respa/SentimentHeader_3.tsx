@@ -1,6 +1,5 @@
 import { Brain } from "lucide-react";
 import { useState, useEffect } from "react";
-import { ThemeToggle } from "./ui/theme-toggle";
 
 const SentimentHeader = () => {
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
@@ -39,30 +38,22 @@ const SentimentHeader = () => {
       </div>
 
       <div className="container max-w-5xl mx-auto relative z-10">
-        {/* Fecha y Hora + Theme Toggle - Esquina superior derecha */}
-        <div className="absolute top-0 right-0 flex items-start gap-2 animate-fade-in">
-          {/* Theme Toggle Button */}
-          <div className="bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 rounded-lg p-2 hover:bg-primary-foreground/20 transition-all duration-300">
-            <ThemeToggle />
-          </div>
-          
-          {/* Fecha y Hora */}
-          <div className="bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 rounded-lg px-3 py-2">
-            <p className="text-primary-foreground/90 text-xs font-medium">
-              {formatDate(currentDateTime)}
-            </p>
-            <p className="text-primary-foreground font-bold text-sm tabular-nums">
-              {formatTime(currentDateTime)}
-            </p>
-          </div>
+        {/* Fecha y Hora - Esquina superior derecha */}
+        <div className="absolute top-0 right-0 bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 rounded-lg px-3 py-2 animate-fade-in">
+          <p className="text-primary-foreground/90 text-xs font-medium">
+            {formatDate(currentDateTime)}
+          </p>
+          <p className="text-primary-foreground font-bold text-sm tabular-nums">
+            {formatTime(currentDateTime)}
+          </p>
         </div>
 
         {/* Contenido central compacto */}
         <div className="text-center pt-2">
           {/* Ícono cerebro */}
           <div className="flex items-center justify-center mb-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            <div className="p-3 bg-red-500/10 rounded-xl backdrop-blur-sm border border-red-500/20 animate-pulse-slow hover:scale-110 transition-transform duration-300">
-              <Brain className="w-10 h-10 md:w-12 md:h-12 text-red-500 animate-brain-pulse" />
+            <div className="p-3 bg-primary-foreground/10 rounded-xl backdrop-blur-sm border border-primary-foreground/20 animate-pulse-slow hover:scale-110 transition-transform duration-300">
+              <Brain className="w-10 h-10 md:w-12 md:h-12 text-primary-foreground animate-brain-pulse" />
             </div>
           </div>
 
@@ -105,11 +96,11 @@ const SentimentHeader = () => {
         @keyframes brain-pulse {
           0%, 100% { 
             transform: scale(1);
-            filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4));
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
           }
           50% { 
             transform: scale(1.05);
-            filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.6));
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.5));
           }
         }
 
