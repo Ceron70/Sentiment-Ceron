@@ -193,7 +193,7 @@ const Estadisticas = () => {
         ) : (
           <>
             {/* Métricas principales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
               <Card className="bg-primary-foreground/10 backdrop-blur-sm border-primary-foreground/20 hover:scale-105 transition-transform duration-300">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-primary-foreground text-sm">
@@ -220,6 +220,21 @@ const Estadisticas = () => {
                     {stats.porcentajePositivo}%
                   </p>
                   <p className="text-white/90 text-sm mt-1 font-semibold">{stats.positivos} análisis</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-blue-500/30 to-cyan-500/20 backdrop-blur-sm border-blue-400/40 hover:scale-105 transition-transform duration-300">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-white text-sm font-bold">
+                    <Minus className="w-4 h-4" />
+                    Neutrales
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-extrabold text-white drop-shadow-lg">
+                    {stats.porcentajeNeutral}%
+                  </p>
+                  <p className="text-white/90 text-sm mt-1 font-semibold">{stats.neutrales} análisis</p>
                 </CardContent>
               </Card>
 
