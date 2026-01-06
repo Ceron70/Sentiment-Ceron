@@ -1,7 +1,6 @@
 import { Brain, BarChart3 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "./ui/button";
 
 const SentimentHeader = () => {
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
@@ -31,6 +30,11 @@ const SentimentHeader = () => {
     });
   };
 
+  const handleEstadisticasClick = () => {
+    console.log('Botón clickeado'); // Para debug
+    navigate('/estadisticas');
+  };
+
   return (
     <header className="w-full gradient-primary py-8 md:py-12 px-4 relative overflow-hidden">
       {/* Partículas de fondo animadas */}
@@ -40,18 +44,15 @@ const SentimentHeader = () => {
         <div className="particle particle-3"></div>
       </div>
 
-      <div className="container max-w-5xl mx-auto relative z-10">
+      <div className="container max-w-5xl mx-auto relative" style={{ zIndex: 100 }}>
         {/* Botón de Estadística - Esquina superior izquierda */}
-        <div className="absolute top-0 left-0 animate-fade-in">
-          <Button
-            onClick={() => navigate('/estadisticas')}
-            className="bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg"
-            variant="ghost"
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Estadísticas
-          </Button>
-        </div>
+        <button
+          onClick={handleEstadisticasClick}
+          className="absolute top-0 left-0 z-[999] flex items-center gap-2 px-4 py-2 bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground font-semibold transition-all duration-300 hover:scale-105 rounded-lg cursor-pointer"
+        >
+          <BarChart3 className="w-4 h-4" />
+          Estadísticas
+        </button>
 
         {/* Fecha y Hora - Esquina superior derecha */}
         <div className="absolute top-0 right-0 bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 rounded-lg px-3 py-2 animate-fade-in">
@@ -63,16 +64,14 @@ const SentimentHeader = () => {
           </p>
         </div>
 
-        {/* Contenido central compacto */}
+        {/* Resto del contenido... */}
         <div className="text-center pt-2">
-          {/* Ícono cerebro */}
           <div className="flex items-center justify-center mb-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
             <div className="p-3 bg-primary-foreground/10 rounded-xl backdrop-blur-sm border border-primary-foreground/20 animate-pulse-slow hover:scale-110 transition-transform duration-300">
               <Brain className="w-10 h-10 md:w-12 md:h-12 text-primary-foreground animate-brain-pulse" />
             </div>
           </div>
 
-          {/* Título con gradiente animado */}
           <h1 
             className="text-2xl md:text-4xl font-extrabold mb-3 animate-fade-in"
             style={{ animationDelay: "0.2s" }}
@@ -82,7 +81,6 @@ const SentimentHeader = () => {
             </span>
           </h1>
 
-          {/* Subtítulo */}
           <p 
             className="text-base md:text-lg text-primary-foreground/90 font-medium animate-fade-in-up"
             style={{ animationDelay: "0.3s" }}
@@ -95,9 +93,8 @@ const SentimentHeader = () => {
         </div>
       </div>
 
-      {/* Estilos personalizados */}
+      {/* Estilos igual que antes... */}
       <style>{`
-        /* Animación de gradiente en el título */
         @keyframes gradient {
           0%, 100% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
@@ -107,7 +104,6 @@ const SentimentHeader = () => {
           animation: gradient 4s ease infinite;
         }
 
-        /* Animación del cerebro */
         @keyframes brain-pulse {
           0%, 100% { 
             transform: scale(1);
@@ -123,7 +119,6 @@ const SentimentHeader = () => {
           animation: brain-pulse 2s ease-in-out infinite;
         }
 
-        /* Pulso lento para el contenedor del cerebro */
         @keyframes pulse-slow {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.8; }
@@ -133,7 +128,6 @@ const SentimentHeader = () => {
           animation: pulse-slow 3s ease-in-out infinite;
         }
 
-        /* Fade in con movimiento hacia arriba */
         @keyframes fade-in-up {
           from {
             opacity: 0;
@@ -149,7 +143,6 @@ const SentimentHeader = () => {
           animation: fade-in-up 0.8s ease-out forwards;
         }
 
-        /* Partículas flotantes de fondo */
         .particle {
           position: absolute;
           background: rgba(255, 255, 255, 0.1);
