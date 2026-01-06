@@ -208,48 +208,48 @@ const Estadisticas = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-green-500/30 to-emerald-500/20 backdrop-blur-sm border-green-400/40 hover:scale-105 transition-transform duration-300">
+              <Card className="bg-gradient-to-br from-green-500/70 to-emerald-600/60 backdrop-blur-sm border-green-300/60 hover:scale-105 transition-transform duration-300 shadow-lg shadow-green-500/20">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-white text-sm font-bold">
-                    <TrendingUp className="w-4 h-4" />
+                  <CardTitle className="flex items-center gap-2 text-white text-sm font-bold drop-shadow-md">
+                    <TrendingUp className="w-5 h-5" />
                     Positivos
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-4xl font-extrabold text-white drop-shadow-lg">
+                  <p className="text-5xl font-extrabold text-white drop-shadow-lg">
                     {stats.porcentajePositivo}%
                   </p>
-                  <p className="text-white/90 text-sm mt-1 font-semibold">{stats.positivos} análisis</p>
+                  <p className="text-white text-sm mt-1 font-bold drop-shadow-md">{stats.positivos} análisis</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-blue-500/30 to-cyan-500/20 backdrop-blur-sm border-blue-400/40 hover:scale-105 transition-transform duration-300">
+              <Card className="bg-gradient-to-br from-blue-500/70 to-cyan-600/60 backdrop-blur-sm border-blue-300/60 hover:scale-105 transition-transform duration-300 shadow-lg shadow-blue-500/20">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-white text-sm font-bold">
-                    <Minus className="w-4 h-4" />
+                  <CardTitle className="flex items-center gap-2 text-white text-sm font-bold drop-shadow-md">
+                    <Minus className="w-5 h-5" />
                     Neutrales
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-4xl font-extrabold text-white drop-shadow-lg">
+                  <p className="text-5xl font-extrabold text-white drop-shadow-lg">
                     {stats.porcentajeNeutral}%
                   </p>
-                  <p className="text-white/90 text-sm mt-1 font-semibold">{stats.neutrales} análisis</p>
+                  <p className="text-white text-sm mt-1 font-bold drop-shadow-md">{stats.neutrales} análisis</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-red-500/30 to-rose-500/20 backdrop-blur-sm border-red-400/40 hover:scale-105 transition-transform duration-300">
+              <Card className="bg-gradient-to-br from-red-500/70 to-rose-600/60 backdrop-blur-sm border-red-300/60 hover:scale-105 transition-transform duration-300 shadow-lg shadow-red-500/20">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-white text-sm font-bold">
-                    <TrendingDown className="w-4 h-4" />
+                  <CardTitle className="flex items-center gap-2 text-white text-sm font-bold drop-shadow-md">
+                    <TrendingDown className="w-5 h-5" />
                     Negativos
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-4xl font-extrabold text-white drop-shadow-lg">
+                  <p className="text-5xl font-extrabold text-white drop-shadow-lg">
                     {stats.porcentajeNegativo}%
                   </p>
-                  <p className="text-white/90 text-sm mt-1 font-semibold">{stats.negativos} análisis</p>
+                  <p className="text-white text-sm mt-1 font-bold drop-shadow-md">{stats.negativos} análisis</p>
                 </CardContent>
               </Card>
 
