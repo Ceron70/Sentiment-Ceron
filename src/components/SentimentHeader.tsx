@@ -1,8 +1,11 @@
-import { Brain } from "lucide-react";
+import { Brain, BarChart3 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "./ui/button";
 
 const SentimentHeader = () => {
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -38,6 +41,18 @@ const SentimentHeader = () => {
       </div>
 
       <div className="container max-w-5xl mx-auto relative z-10">
+        {/* Botón de Estadística - Esquina superior izquierda */}
+        <div className="absolute top-0 left-0 animate-fade-in">
+          <Button
+            onClick={() => navigate('/estadisticas')}
+            className="bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg"
+            variant="ghost"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Estadísticas
+          </Button>
+        </div>
+
         {/* Fecha y Hora - Esquina superior derecha */}
         <div className="absolute top-0 right-0 bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 rounded-lg px-3 py-2 animate-fade-in">
           <p className="text-primary-foreground/90 text-xs font-medium">
