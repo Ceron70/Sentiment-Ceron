@@ -1,416 +1,336 @@
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, MessageSquare, BarChart3, Calendar, Percent, Trash2, Download } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from "recharts";
-import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { 
+  ArrowLeft, 
+  TrendingUp, 
+  BarChart3, 
+  RefreshCw,
+  Smile,
+  Frown,
+  Meh,
+  Activity
+} from "lucide-react";
 import { toast } from "sonner";
 
-interface AnalysisRecord {
-  id: string;
-  text: string;
-  sentiment: "positive" | "negative" | "neutral";
-  confidence: number;
-  timestamp: number;
-  date: string;
+interface StatsData {
+  total: number;
+  positivos: number;
+  negativos: number;
+  neutros: number;
+  porcentajePositivos: number;
+  porcentajeNegativos: number;
+  porcentajeNeutros: number;
 }
 
 const Estadisticas = () => {
   const navigate = useNavigate();
-  const [analyses, setAnalyses] = useState<AnalysisRecord[]>([]);
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastAnalyses, setLastAnalyses] = useState(20);
+
+  const fetchStats = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `https://sentiment-tech-api.onrender.com/api/v1/sentiment/stats?last=${lastAnalyses}`
+      );
+      
+      if (!response.ok) {
+        throw new Error("Error al cargar estadísticas");
+      }
+
+      const data: StatsData = await response.json();
+      setStats(data);
+      toast.success("Estadísticas actualizadas");
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      toast.error("No se pudieron cargar las estadísticas");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    loadAnalyses();
-  }, []);
+    fetchStats();
+  }, [lastAnalyses]);
 
-  const loadAnalyses = () => {
-    try {
-      const stored = localStorage.getItem("sentiment-analyses");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setAnalyses(parsed);
-      }
-    } catch (error) {
-      console.error("Error loading analyses:", error);
-      toast.error("Error al cargar análisis");
-    }
-  };
-
-  const clearHistory = () => {
-    if (confirm("¿Estás seguro de que quieres borrar todo el historial?")) {
-      localStorage.removeItem("sentiment-analyses");
-      setAnalyses([]);
-      toast.success("Historial eliminado");
-    }
-  };
-
-  const exportData = () => {
-    const dataStr = JSON.stringify(analyses, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `sentiment-analysis-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    toast.success("Datos exportados");
-  };
-
-  // Calcular estadísticas
-  const stats = {
-    totalAnalisis: analyses.length,
-    positivos: analyses.filter(a => a.sentiment === "positive").length,
-    negativos: analyses.filter(a => a.sentiment === "negative").length,
-    neutrales: analyses.filter(a => a.sentiment === "neutral").length,
-    porcentajePositivo: analyses.length > 0 ? Math.round((analyses.filter(a => a.sentiment === "positive").length / analyses.length) * 100) : 0,
-    porcentajeNegativo: analyses.length > 0 ? Math.round((analyses.filter(a => a.sentiment === "negative").length / analyses.length) * 100) : 0,
-    porcentajeNeutral: analyses.length > 0 ? Math.round((analyses.filter(a => a.sentiment === "neutral").length / analyses.length) * 100) : 0,
-    promedioConfianza: analyses.length > 0 ? Math.round(analyses.reduce((sum, a) => sum + a.confidence, 0) / analyses.length) : 0
-  };
-
-  // Datos para gráfico de pie
-  const pieData = [
-    { name: "Positivo", value: stats.positivos, color: "#10b981" },
-    { name: "Neutral", value: stats.neutrales, color: "#3b82f6" },
-    { name: "Negativo", value: stats.negativos, color: "#ef4444" }
-  ].filter(d => d.value > 0);
-
-  // Datos para gráfico de línea (últimos 7 días)
-  const getLast7Days = () => {
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      days.push(date.toISOString().split('T')[0]);
-    }
-    return days;
-  };
-
-  const lineData = getLast7Days().map(date => {
-    const dayAnalyses = analyses.filter(a => a.date === date);
-    return {
-      date: new Date(date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
-      positivos: dayAnalyses.filter(a => a.sentiment === "positive").length,
-      negativos: dayAnalyses.filter(a => a.sentiment === "negative").length,
-      neutrales: dayAnalyses.filter(a => a.sentiment === "neutral").length,
-      total: dayAnalyses.length
-    };
-  });
-
-  // Datos para gráfico de barras (confianza promedio por sentimiento)
-  const confidenceData = [
-    {
-      sentiment: "Positivo",
-      confianza: analyses.filter(a => a.sentiment === "positive").length > 0 
-        ? Math.round(analyses.filter(a => a.sentiment === "positive").reduce((sum, a) => sum + a.confidence, 0) / analyses.filter(a => a.sentiment === "positive").length)
-        : 0,
-      color: "#10b981"
-    },
-    {
-      sentiment: "Neutral",
-      confianza: analyses.filter(a => a.sentiment === "neutral").length > 0 
-        ? Math.round(analyses.filter(a => a.sentiment === "neutral").reduce((sum, a) => sum + a.confidence, 0) / analyses.filter(a => a.sentiment === "neutral").length)
-        : 0,
-      color: "#3b82f6"
-    },
-    {
-      sentiment: "Negativo",
-      confianza: analyses.filter(a => a.sentiment === "negative").length > 0 
-        ? Math.round(analyses.filter(a => a.sentiment === "negative").reduce((sum, a) => sum + a.confidence, 0) / analyses.filter(a => a.sentiment === "negative").length)
-        : 0,
-      color: "#ef4444"
-    }
-  ];
+  const StatCard = ({ 
+    icon: Icon, 
+    label, 
+    value, 
+    percentage, 
+    color 
+  }: { 
+    icon: any; 
+    label: string; 
+    value: number; 
+    percentage: number; 
+    color: string;
+  }) => (
+    <Card className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${color}`}>
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Icon className="w-5 h-5 text-muted-foreground" />
+            <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-3xl font-bold">{value}</p>
+            <Badge variant="secondary" className="text-xs">
+              {percentage.toFixed(1)}%
+            </Badge>
+          </div>
+        </div>
+        <div className="relative w-16 h-16">
+          <svg className="w-16 h-16 transform -rotate-90">
+            <circle
+              cx="32"
+              cy="32"
+              r="28"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+              className="text-secondary"
+            />
+            <circle
+              cx="32"
+              cy="32"
+              r="28"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+              strokeDasharray={`${(percentage / 100) * 176} 176`}
+              className={color.includes('green') ? 'text-green-500' : 
+                         color.includes('red') ? 'text-red-500' : 'text-yellow-500'}
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs font-semibold">{percentage.toFixed(0)}%</span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
 
   return (
-    <div className="min-h-screen gradient-primary">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="w-full py-6 px-4 border-b border-white/10">
-        <div className="container max-w-7xl mx-auto flex justify-between items-center">
-          <Button
-            onClick={() => navigate('/')}
-            className="bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground font-semibold transition-all duration-300 hover:scale-105"
-            variant="ghost"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver
-          </Button>
-          
-          <div className="flex gap-2">
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/")}
+                className="hover:bg-secondary"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <BarChart3 className="w-8 h-8 text-primary" />
+                <div>
+                  <h1 className="text-2xl font-bold">Estadísticas</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Análisis de sentimientos
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             <Button
-              onClick={exportData}
-              disabled={analyses.length === 0}
-              className="bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground"
-              variant="ghost"
-              size="sm"
+              variant="outline"
+              onClick={fetchStats}
+              disabled={isLoading}
+              className="gap-2"
             >
-              <Download className="w-4 h-4 mr-2" />
-              Exportar
-            </Button>
-            <Button
-              onClick={clearHistory}
-              disabled={analyses.length === 0}
-              className="bg-red-500/20 backdrop-blur-sm border border-red-400/30 hover:bg-red-500/30 text-red-100"
-              variant="ghost"
-              size="sm"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Limpiar
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Actualizar
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Contenido */}
-      <div className="container max-w-7xl mx-auto px-4 py-8">
-        {/* Título */}
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="flex items-center justify-center mb-4">
-            <div className="p-3 bg-primary-foreground/10 rounded-xl backdrop-blur-sm border border-primary-foreground/20">
-              <BarChart3 className="w-10 h-10 text-primary-foreground" />
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        {isLoading && !stats ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center space-y-4">
+              <RefreshCw className="w-12 h-12 animate-spin mx-auto text-primary" />
+              <p className="text-muted-foreground">Cargando estadísticas...</p>
             </div>
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold mb-2">
-            <span className="bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
-              Estadísticas de Análisis
-            </span>
-          </h1>
-          <p className="text-primary-foreground/90 text-lg">
-            {analyses.length > 0 ? `${stats.totalAnalisis} análisis realizados` : "No hay análisis todavía"}
-          </p>
-        </div>
-
-        {analyses.length === 0 ? (
-          <Card className="bg-primary-foreground/10 backdrop-blur-sm border-primary-foreground/20">
-            <CardContent className="py-12 text-center">
-              <MessageSquare className="w-16 h-16 text-primary-foreground/30 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-primary-foreground mb-2">No hay datos disponibles</h3>
-              <p className="text-primary-foreground/70 mb-6">Realiza tu primer análisis para ver estadísticas</p>
-              <Button onClick={() => navigate('/')} className="bg-primary text-primary-foreground">
-                Ir a Análisis
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            {/* Métricas principales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-              <Card className="bg-primary-foreground/10 backdrop-blur-sm border-primary-foreground/20 hover:scale-105 transition-transform duration-300">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-primary-foreground text-sm">
-                    <MessageSquare className="w-4 h-4" />
-                    Total Análisis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-4xl font-extrabold text-primary-foreground">
-                    {stats.totalAnalisis}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-green-500/70 to-emerald-600/60 backdrop-blur-sm border-green-300/60 hover:scale-105 transition-transform duration-300 shadow-lg shadow-green-500/20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-white text-sm font-bold drop-shadow-md">
-                    <TrendingUp className="w-5 h-5" />
-                    Positivos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-5xl font-extrabold text-white drop-shadow-lg">
-                    {stats.porcentajePositivo}%
-                  </p>
-                  <p className="text-white text-sm mt-1 font-bold drop-shadow-md">{stats.positivos} análisis</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-blue-500/70 to-cyan-600/60 backdrop-blur-sm border-blue-300/60 hover:scale-105 transition-transform duration-300 shadow-lg shadow-blue-500/20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-white text-sm font-bold drop-shadow-md">
-                    <Minus className="w-5 h-5" />
-                    Neutrales
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-5xl font-extrabold text-white drop-shadow-lg">
-                    {stats.porcentajeNeutral}%
-                  </p>
-                  <p className="text-white text-sm mt-1 font-bold drop-shadow-md">{stats.neutrales} análisis</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-red-500/70 to-rose-600/60 backdrop-blur-sm border-red-300/60 hover:scale-105 transition-transform duration-300 shadow-lg shadow-red-500/20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-white text-sm font-bold drop-shadow-md">
-                    <TrendingDown className="w-5 h-5" />
-                    Negativos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-5xl font-extrabold text-white drop-shadow-lg">
-                    {stats.porcentajeNegativo}%
-                  </p>
-                  <p className="text-white text-sm mt-1 font-bold drop-shadow-md">{stats.negativos} análisis</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-purple-500/30 to-pink-500/20 backdrop-blur-sm border-purple-400/40 hover:scale-105 transition-transform duration-300">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-white text-sm font-bold">
-                    <Percent className="w-4 h-4" />
-                    Confianza Media
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-4xl font-extrabold text-white drop-shadow-lg">
-                    {stats.promedioConfianza}%
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Gráficos */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              {/* Gráfico de distribución (Pie) */}
-              <Card className="bg-primary-foreground/10 backdrop-blur-sm border-primary-foreground/20">
-                <CardHeader>
-                  <CardTitle className="text-primary-foreground">Distribución de Sentimientos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Gráfico de confianza por sentimiento */}
-              <Card className="bg-primary-foreground/10 backdrop-blur-sm border-primary-foreground/20">
-                <CardHeader>
-                  <CardTitle className="text-primary-foreground">Confianza Promedio</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={confidenceData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                      <XAxis dataKey="sentiment" stroke="rgba(255,255,255,0.7)" />
-                      <YAxis stroke="rgba(255,255,255,0.7)" domain={[0, 100]} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)' }}
-                        labelStyle={{ color: '#fff' }}
-                      />
-                      <Bar dataKey="confianza" fill="#8884d8">
-                        {confidenceData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Gráfico de tendencia temporal */}
-            <Card className="bg-primary-foreground/10 backdrop-blur-sm border-primary-foreground/20 mb-8">
-              <CardHeader>
-                <CardTitle className="text-primary-foreground flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Tendencia (Últimos 7 días)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={lineData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="date" stroke="rgba(255,255,255,0.7)" />
-                    <YAxis stroke="rgba(255,255,255,0.7)" />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)' }}
-                      labelStyle={{ color: '#fff' }}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="positivos" stroke="#10b981" strokeWidth={2} />
-                    <Line type="monotone" dataKey="neutrales" stroke="#3b82f6" strokeWidth={2} />
-                    <Line type="monotone" dataKey="negativos" stroke="#ef4444" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* Últimos análisis */}
-            <Card className="bg-primary-foreground/10 backdrop-blur-sm border-primary-foreground/20">
-              <CardHeader>
-                <CardTitle className="text-primary-foreground">Últimos 10 Análisis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {analyses.slice(-10).reverse().map((analysis) => (
-                    <div
-                      key={analysis.id}
-                      className="p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+        ) : stats ? (
+          <div className="space-y-8 animate-fade-in">
+            {/* Selector de últimos análisis */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <Activity className="w-6 h-6 text-primary" />
+                  <div>
+                    <h3 className="font-semibold">Últimos análisis</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Mostrando datos de los últimos {lastAnalyses} análisis
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {[10, 20, 50, 100].map((num) => (
+                    <Button
+                      key={num}
+                      variant={lastAnalyses === num ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setLastAnalyses(num)}
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-primary-foreground/90 text-sm truncate">
-                            {analysis.text}
-                          </p>
-                          <p className="text-primary-foreground/50 text-xs mt-1">
-                            {new Date(analysis.timestamp).toLocaleString('es-ES')}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            analysis.sentiment === 'positive' ? 'bg-green-500/20 text-green-300 border border-green-400/30' :
-                            analysis.sentiment === 'negative' ? 'bg-red-500/20 text-red-300 border border-red-400/30' :
-                            'bg-blue-500/20 text-blue-300 border border-blue-400/30'
-                          }`}>
-                            {analysis.sentiment === 'positive' ? '😊 Positivo' :
-                             analysis.sentiment === 'negative' ? '😢 Negativo' :
-                             '😐 Neutral'}
-                          </div>
-                          <div className="text-primary-foreground/70 text-sm font-semibold">
-                            {analysis.confidence}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      {num}
+                    </Button>
                   ))}
                 </div>
-              </CardContent>
+              </div>
             </Card>
-          </>
-        )}
-      </div>
 
-      <style>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.8s ease-out forwards;
-        }
-      `}</style>
+            {/* Total de análisis */}
+            <Card className="p-8 bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    Total de Análisis
+                  </p>
+                  <p className="text-5xl font-bold">{stats.total}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Textos analizados en total
+                  </p>
+                </div>
+                <TrendingUp className="w-20 h-20 text-primary/20" />
+              </div>
+            </Card>
+
+            {/* Cards de estadísticas */}
+            <div className="grid md:grid-cols-3 gap-6">
+              <StatCard
+                icon={Smile}
+                label="Sentimientos Positivos"
+                value={stats.positivos}
+                percentage={stats.porcentajePositivos}
+                color="border-l-green-500"
+              />
+              <StatCard
+                icon={Frown}
+                label="Sentimientos Negativos"
+                value={stats.negativos}
+                percentage={stats.porcentajeNegativos}
+                color="border-l-red-500"
+              />
+              <StatCard
+                icon={Meh}
+                label="Sentimientos Neutrales"
+                value={stats.neutros}
+                percentage={stats.porcentajeNeutros}
+                color="border-l-yellow-500"
+              />
+            </div>
+
+            {/* Gráfico de barras visual */}
+            <Card className="p-8">
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <BarChart3 className="w-6 h-6" />
+                Distribución de Sentimientos
+              </h3>
+              <div className="space-y-4">
+                {/* Positivos */}
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      <Smile className="w-4 h-4 text-green-500" />
+                      Positivos
+                    </span>
+                    <span className="text-sm font-bold">
+                      {stats.positivos} ({stats.porcentajePositivos.toFixed(1)}%)
+                    </span>
+                  </div>
+                  <div className="h-8 w-full bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-1000 ease-out flex items-center justify-end pr-3"
+                      style={{ width: `${stats.porcentajePositivos}%` }}
+                    >
+                      {stats.porcentajePositivos > 10 && (
+                        <span className="text-xs font-semibold text-white">
+                          {stats.porcentajePositivos.toFixed(1)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Negativos */}
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      <Frown className="w-4 h-4 text-red-500" />
+                      Negativos
+                    </span>
+                    <span className="text-sm font-bold">
+                      {stats.negativos} ({stats.porcentajeNegativos.toFixed(1)}%)
+                    </span>
+                  </div>
+                  <div className="h-8 w-full bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-red-400 to-red-600 transition-all duration-1000 ease-out flex items-center justify-end pr-3"
+                      style={{ width: `${stats.porcentajeNegativos}%` }}
+                    >
+                      {stats.porcentajeNegativos > 10 && (
+                        <span className="text-xs font-semibold text-white">
+                          {stats.porcentajeNegativos.toFixed(1)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Neutrales */}
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      <Meh className="w-4 h-4 text-yellow-500" />
+                      Neutrales
+                    </span>
+                    <span className="text-sm font-bold">
+                      {stats.neutros} ({stats.porcentajeNeutros.toFixed(1)}%)
+                    </span>
+                  </div>
+                  <div className="h-8 w-full bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 transition-all duration-1000 ease-out flex items-center justify-end pr-3"
+                      style={{ width: `${stats.porcentajeNeutros}%` }}
+                    >
+                      {stats.porcentajeNeutros > 10 && (
+                        <span className="text-xs font-semibold text-white">
+                          {stats.porcentajeNeutros.toFixed(1)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Footer info */}
+            <div className="text-center text-sm text-muted-foreground">
+              <p>Datos actualizados en tiempo real desde la API</p>
+              <p className="mt-1">
+                Última actualización: {new Date().toLocaleString('es-ES')}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground">No hay datos disponibles</p>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
