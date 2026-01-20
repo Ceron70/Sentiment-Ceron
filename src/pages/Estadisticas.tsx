@@ -84,7 +84,7 @@ const Estadisticas = () => {
     setIsLoadingBatch(true);
     try {
       const response = await fetch(
-        "https://sentiment-tech-api.onrender.com/api/v1/sentiment/batch"
+        "https://sentiment-tech-api.onrender.com/api/v1/sentiment/batch1"
       );
       
       if (!response.ok) {
