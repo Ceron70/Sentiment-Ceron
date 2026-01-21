@@ -32,6 +32,9 @@ interface CSVUploadButtonsProps {
 const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
+  // Función para esperar X segundos
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   // Cargar example.csv automáticamente
   const handleLoadExampleCSV = async () => {
     setIsLoading(true);
@@ -47,7 +50,7 @@ const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
       const blob = await fileResponse.blob();
       const file = new File([blob], 'example.csv', { type: 'text/csv' });
 
-      await uploadCSV(file);
+      await uploadCSVWithRetry(file);
     } catch (err) {
       toast.dismiss('csv-loading');
       const errorMessage = err instanceof Error ? err.message : 'Error al procesar el archivo';
@@ -75,12 +78,12 @@ const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
     toast.loading(`Procesando ${file.name}...`, { id: 'csv-loading' });
 
     try {
-      await uploadCSV(file);
+      await uploadCSVWithRetry(file);
     } catch (err) {
       toast.dismiss('csv-loading');
       const errorMessage = err instanceof Error ? err.message : 'Error al procesar el archivo';
       toast.error(errorMessage, {
-        description: 'El servidor puede estar inactivo. Intenta nuevamente en unos segundos.',
+        description: 'El servidor no está disponible en este momento.',
         duration: 5000
       });
     } finally {
@@ -89,22 +92,68 @@ const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
     }
   };
 
-  // Función común para subir CSV
+  // Función con reintentos automáticos
+  const uploadCSVWithRetry = async (file: File, maxRetries = 3) => {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Mostrar mensaje de reintento si no es el primer intento
+        if (attempt > 1) {
+          toast.loading(`Reintentando... (intento ${attempt} de ${maxRetries})`, { 
+            id: 'csv-retry',
+            description: 'El servidor puede estar activándose, espera un momento...'
+          });
+          // Esperar 5 segundos entre reintentos
+          await sleep(5000);
+        } else {
+          toast.loading('Conectando con el servidor...', { id: 'csv-connecting' });
+        }
+
+        await uploadCSV(file);
+        
+        // Si llegamos aquí, fue exitoso
+        toast.dismiss('csv-retry');
+        toast.dismiss('csv-connecting');
+        toast.dismiss('csv-loading');
+        return; // Salir de la función si fue exitoso
+        
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Error desconocido');
+        
+        // Si no es el último intento, continuar con el siguiente
+        if (attempt < maxRetries) {
+          console.log(`Intento ${attempt} falló, reintentando...`);
+          continue;
+        }
+      }
+    }
+
+    // Si llegamos aquí, todos los intentos fallaron
+    toast.dismiss('csv-retry');
+    toast.dismiss('csv-connecting');
+    toast.dismiss('csv-loading');
+    
+    throw new Error(`No se pudo conectar con el servidor después de ${maxRetries} intentos. ${lastError?.message || ''}`);
+  };
+
+  // Función para subir CSV (un solo intento)
   const uploadCSV = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    try {
-      // Mostrar que estamos intentando conectar
-      toast.loading('Conectando con el servidor...', { id: 'csv-connecting' });
+    // Timeout de 30 segundos para la petición
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
+    try {
       const res = await fetch('https://sentiment-tech-api.onrender.com/api/v1/sentiment/batch', {
         method: 'POST',
         body: formData,
+        signal: controller.signal
       });
 
-      toast.dismiss('csv-connecting');
-      toast.dismiss('csv-loading');
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         // Intentar leer el error del servidor
@@ -181,8 +230,13 @@ const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
       }
 
     } catch (error) {
-      toast.dismiss('csv-connecting');
-      toast.dismiss('csv-loading');
+      clearTimeout(timeoutId);
+      
+      // Si es error de abort (timeout)
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('El servidor tardó demasiado en responder (timeout de 30s)');
+      }
+      
       throw error;
     }
   };
@@ -246,7 +300,7 @@ const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
               "La experiencia fue regular"
             </code>
             <p className="text-blue-600 mt-2 text-xs">
-              💡 <strong>Nota:</strong> El servidor puede tardar unos segundos en activarse si está inactivo.
+              💡 <strong>Nota:</strong> El sistema reintentará automáticamente hasta 3 veces si el servidor tarda en responder.
             </p>
           </div>
         </div>
