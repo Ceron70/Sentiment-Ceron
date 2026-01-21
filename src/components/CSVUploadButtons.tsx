@@ -29,11 +29,126 @@ interface CSVUploadButtonsProps {
   onBatchAnalyzed?: (response: BatchResponse) => void;
 }
 
+type SentimentType = "positivo" | "negativo" | "neutral";
+
 const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Función para esperar X segundos
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // Análisis local de sentimiento (similar al de Index.tsx)
+  const analyzeTextLocally = (text: string): { prevision: SentimentType; probabilidad: number } => {
+    const textLower = text.toLowerCase();
+    
+    const palabrasPositivas = [
+      "bueno", "excelente", "genial", "feliz", "amor", "increíble", 
+      "maravilloso", "fantástico", "perfecto", "alegre", "contento",
+      "bien", "mejor", "éxito", "logro", "encanta", "encantó", "recomiendo",
+      "superó", "expectativas", "calidad", "premium", "impecable"
+    ];
+    
+    const palabrasNegativas = [
+      "malo", "terrible", "triste", "odio", "horrible", "pésimo",
+      "desastre", "fracaso", "dolor", "problema", "error", "fallo",
+      "mal", "peor", "difícil", "nunca", "quejas", "dañado", "deficiente",
+      "perdí", "caos", "fallido"
+    ];
+    
+    const positivas = palabrasPositivas.filter(p => textLower.includes(p)).length;
+    const negativas = palabrasNegativas.filter(p => textLower.includes(p)).length;
+    
+    let prevision: SentimentType = "neutral";
+    let probabilidad = 0.70;
+    
+    if (positivas > negativas && positivas > 0) {
+      prevision = "positivo";
+      probabilidad = Math.min(0.70 + (positivas * 0.05), 0.95);
+    } else if (negativas > positivas && negativas > 0) {
+      prevision = "negativo";
+      probabilidad = Math.min(0.70 + (negativas * 0.05), 0.95);
+    } else if (positivas === 0 && negativas === 0) {
+      probabilidad = 0.60;
+    }
+    
+    return { prevision, probabilidad };
+  };
+
+  // Procesar CSV localmente
+  const processCSVLocally = async (file: File): Promise<BatchResponse> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = async (e) => {
+        try {
+          const text = e.target?.result as string;
+          const lines = text.split('\n').filter(line => line.trim());
+          
+          const results: SentimentResult[] = [];
+          let totalPositives = 0;
+          let totalNeutrals = 0;
+          let totalNegatives = 0;
+
+          toast.loading(`Analizando ${lines.length} textos localmente...`, { id: 'local-analysis' });
+
+          for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            
+            // Remover comillas del inicio y final
+            if (line.startsWith('"') && line.endsWith('"')) {
+              line = line.substring(1, line.length - 1);
+            }
+            
+            // Analizar el texto
+            const sentiment = analyzeTextLocally(line);
+            
+            results.push({
+              text: line,
+              sentiment: sentiment
+            });
+
+            // Contar sentimientos
+            if (sentiment.prevision === "positivo") totalPositives++;
+            else if (sentiment.prevision === "negativo") totalNegatives++;
+            else totalNeutrals++;
+
+            // Simular progreso (pequeña pausa cada 5 textos)
+            if (i % 5 === 0) {
+              await sleep(100);
+            }
+          }
+
+          toast.dismiss('local-analysis');
+
+          const response: BatchResponse = {
+            success: true,
+            data: {
+              totalProcessed: lines.length,
+              successful: lines.length,
+              failed: 0,
+              totalPositives,
+              totalNeutrals,
+              totalNegatives,
+              results
+            },
+            message: `Se procesaron ${lines.length} textos usando análisis local (servidor no disponible). Sentimientos: ${totalPositives} positivos, ${totalNeutrals} neutrales, ${totalNegatives} negativos`
+          };
+
+          resolve(response);
+        } catch (error) {
+          toast.dismiss('local-analysis');
+          reject(error);
+        }
+      };
+
+      reader.onerror = () => {
+        toast.dismiss('local-analysis');
+        reject(new Error('Error al leer el archivo'));
+      };
+
+      reader.readAsText(file, 'UTF-8');
+    });
+  };
 
   // Cargar example.csv automáticamente
   const handleLoadExampleCSV = async () => {
@@ -92,7 +207,7 @@ const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
     }
   };
 
-  // Función con reintentos automáticos
+  // Función con reintentos automáticos y fallback local
   const uploadCSVWithRetry = async (file: File, maxRetries = 3) => {
     let lastError: Error | null = null;
 
@@ -134,7 +249,38 @@ const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
     toast.dismiss('csv-connecting');
     toast.dismiss('csv-loading');
     
-    throw new Error(`No se pudo conectar con el servidor después de ${maxRetries} intentos. ${lastError?.message || ''}`);
+    // Usar análisis local como fallback
+    console.warn('Servidor no disponible, usando análisis local');
+    toast.warning('Servidor no disponible', {
+      description: 'Procesando textos localmente con análisis básico',
+      duration: 4000
+    });
+
+    try {
+      const localResponse = await processCSVLocally(file);
+      
+      // Mostrar notificación de éxito
+      toast.success('¡Análisis completado (modo local)!', {
+        description: `${localResponse.data.successful} textos procesados correctamente`,
+        duration: 5000
+      });
+      
+      // Mostrar resumen de sentimientos
+      toast.info('Resumen de sentimientos', {
+        description: `😊 ${localResponse.data.totalPositives} positivos • 😐 ${localResponse.data.totalNeutrals} neutrales • 😞 ${localResponse.data.totalNegatives} negativos`,
+        duration: 7000
+      });
+
+      // Guardar en localStorage
+      saveToLocalStorage(localResponse);
+
+      // Callback opcional
+      if (onBatchAnalyzed) {
+        onBatchAnalyzed(localResponse);
+      }
+    } catch (localError) {
+      throw new Error(`No se pudo procesar el archivo: ${localError instanceof Error ? localError.message : 'Error desconocido'}`);
+    }
   };
 
   // Función para subir CSV (un solo intento)
@@ -156,7 +302,6 @@ const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
       clearTimeout(timeoutId);
 
       if (!res.ok) {
-        // Intentar leer el error del servidor
         let errorDetail = `Error ${res.status}: ${res.statusText}`;
         try {
           const errorData = await res.json();
@@ -169,75 +314,72 @@ const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
 
       const data: BatchResponse = await res.json();
       
-      // Verificar si hubo textos procesados
       if (data.data.totalProcessed === 0) {
         throw new Error('No se procesaron textos. Verifica el formato del archivo CSV.');
       }
 
-      // Verificar si todos fallaron
       if (data.data.successful === 0 && data.data.failed > 0) {
         toast.warning('Todos los textos fallaron al procesarse', {
-          description: 'El formato del CSV podría no ser el correcto. Asegúrate de que cada línea contenga un texto entre comillas.',
-          duration: 7000
+          description: 'Usando análisis local como alternativa...',
+          duration: 5000
         });
-        return;
+        throw new Error('Todos los textos fallaron en el servidor');
       }
       
-      // Mostrar notificación de éxito con detalles
       toast.success('¡Análisis completado!', {
         description: `${data.data.successful} exitosos de ${data.data.totalProcessed} textos procesados`,
         duration: 5000
       });
       
-      // Mostrar resumen de sentimientos
       if (data.data.successful > 0) {
         toast.info('Resumen de sentimientos', {
           description: `😊 ${data.data.totalPositives} positivos • 😐 ${data.data.totalNeutrals} neutrales • 😞 ${data.data.totalNegatives} negativos`,
           duration: 7000
         });
       }
-      
-      // Callback opcional para manejar los resultados
+
+      saveToLocalStorage(data);
+
       if (onBatchAnalyzed) {
         onBatchAnalyzed(data);
-      }
-
-      // Guardar resultados en localStorage para estadísticas
-      try {
-        const stored = localStorage.getItem("sentiment-batch-analyses");
-        const batches = stored ? JSON.parse(stored) : [];
-        
-        batches.push({
-          id: `batch-${Date.now()}`,
-          timestamp: Date.now(),
-          date: new Date().toISOString().split('T')[0],
-          totalProcessed: data.data.totalProcessed,
-          successful: data.data.successful,
-          positives: data.data.totalPositives,
-          neutrals: data.data.totalNeutrals,
-          negatives: data.data.totalNegatives,
-          results: data.data.results
-        });
-
-        // Mantener solo los últimos 50 análisis batch
-        if (batches.length > 50) {
-          batches.splice(0, batches.length - 50);
-        }
-
-        localStorage.setItem("sentiment-batch-analyses", JSON.stringify(batches));
-      } catch (error) {
-        console.error("Error saving batch to history:", error);
       }
 
     } catch (error) {
       clearTimeout(timeoutId);
       
-      // Si es error de abort (timeout)
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('El servidor tardó demasiado en responder (timeout de 30s)');
       }
       
       throw error;
+    }
+  };
+
+  // Guardar en localStorage
+  const saveToLocalStorage = (data: BatchResponse) => {
+    try {
+      const stored = localStorage.getItem("sentiment-batch-analyses");
+      const batches = stored ? JSON.parse(stored) : [];
+      
+      batches.push({
+        id: `batch-${Date.now()}`,
+        timestamp: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        totalProcessed: data.data.totalProcessed,
+        successful: data.data.successful,
+        positives: data.data.totalPositives,
+        neutrals: data.data.totalNeutrals,
+        negatives: data.data.totalNegatives,
+        results: data.data.results
+      });
+
+      if (batches.length > 50) {
+        batches.splice(0, batches.length - 50);
+      }
+
+      localStorage.setItem("sentiment-batch-analyses", JSON.stringify(batches));
+    } catch (error) {
+      console.error("Error saving batch to history:", error);
     }
   };
 
@@ -300,7 +442,7 @@ const CSVUploadButtons = ({ onBatchAnalyzed }: CSVUploadButtonsProps) => {
               "La experiencia fue regular"
             </code>
             <p className="text-blue-600 mt-2 text-xs">
-              💡 <strong>Nota:</strong> El sistema reintentará automáticamente hasta 3 veces si el servidor tarda en responder.
+              💡 <strong>Modo híbrido:</strong> Intenta usar el servidor (3 reintentos). Si falla, procesa localmente.
             </p>
           </div>
         </div>
